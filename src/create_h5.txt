@@ -1,0 +1,23 @@
+in matlab
+
+h5create('/home/jgarcia/person3.h5','/person',[40614]);
+h5write('/home/jgarcia/person.h5','/person',vec);
+
+javi=1
+vec=1:40614;
+for i=1:40614
+if javi < 21
+vec(i)=[javi];
+javi=javi+1
+else
+javi=1;
+vec(i)=[javi];
+javi=javi+1;
+end
+end
+vec=transpose(vec);
+
+vec2=vec(1:2958);
+h5create('/home/jgarcia/person_valid.h5','/person',[2958]);
+h5write('/home/jgarcia/person_valid.h5','/person',vec2);
+
