@@ -19,6 +19,7 @@ else
     model = createModel(modelArgs)
 end
 
+
 -- Criterion (can be set in the opt.task file as well)
 if not criterion then
     criterion = nn[opt.crit .. 'Criterion']()

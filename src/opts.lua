@@ -48,13 +48,13 @@ local function parse(arg)
     cmd:text()
     cmd:text(' ---------- Training options -----------------------------------')
     cmd:text()
-    cmd:option('-nEpochs',           3, 'Total number of epochs to run')
-    cmd:option('-trainIters',        8, 'Number of train iterations per epoch')
+    cmd:option('-nEpochs',           100, 'Total number of epochs to run')
+    cmd:option('-trainIters',        8, 'Number of train iterations per epoch')--8000
     cmd:option('-trainBatch',          6, 'Mini-batch size')
-    cmd:option('-trainBatch',          1, 'Mini-batch size')
+    cmd:option('-trainBatch',          2, 'Mini-batch size')
     cmd:option('-validIters',       10, 'Number of validation iterations per epoch') --1000
     cmd:option('-validBatch',          1, 'Mini-batch size for validation')
-    cmd:option('-nValidImgs',       1000, 'Number of images to use for validation. Only relevant if randomValid is set to true')
+    cmd:option('-nValidImgs',       10, 'Number of images to use for validation. Only relevant if randomValid is set to true')--1000
     cmd:option('-randomValid',     false, 'Whether or not to use a fixed validation set of 2958 images (same as Tompson et al. 2015)')
     cmd:text()
     cmd:text(' ---------- Data options ---------------------------------------')

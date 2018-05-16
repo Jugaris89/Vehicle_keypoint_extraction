@@ -54,6 +54,8 @@ function step(tag)
         end
 
         -- Do a forward pass and calculate loss
+        --ERROR AQUI en forward
+--        print(input)
         local output = model:forward(input)
         local err = criterion:forward(output, label)
         avgLoss = avgLoss + err / nIters
@@ -62,9 +64,6 @@ function step(tag)
             model:zeroGradParameters()
             model:backward(input, criterion:backward(output, label))
             optfn(evalFn, param, optimState)
-            print('ACCURACY')
-            print(avgAcc)
-            print(accuracy(output, label))
 	else
             -- Validation: Get flipped output
             output = applyFn(function (x) return x:clone() end, output)
@@ -102,7 +101,6 @@ function step(tag)
 
     if (tag == 'valid' and opt.snapshot ~= 0 and epoch % opt.snapshot == 0) or tag == 'predict' then
         -- Take a snapshot
-        print('VALID')
         model:clearState()
         torch.save(paths.concat(opt.save, 'options.t7'), opt)
         torch.save(paths.concat(opt.save, 'optimState.t7'), optimState)
