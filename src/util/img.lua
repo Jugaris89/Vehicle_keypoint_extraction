@@ -1,3 +1,5 @@
+require 'image'
+
 function applyFn(fn, t, t2)
     -- Apply an operation whether passed a table or tensor
     local t_ = {}
@@ -207,8 +209,8 @@ function drawGaussian(img, pt, sigma)
     -- Draw a 2D gaussian
     -- Check that any part of the gaussian is in-bounds
     local tmpSize = math.ceil(3*sigma)
-    local ul = {math.floor(pt[1] - tmpSize), math.floor(pt[2] - tmpSize)}
-    local br = {math.floor(pt[1] + tmpSize), math.floor(pt[2] + tmpSize)}
+    local ul = {math.floor(pt[1] - tmpSize), math.floor(pt[2] - tmpSize)}  --el segundo pt[1] era pt[2]
+    local br = {math.floor(pt[1] + tmpSize), math.floor(pt[2] + tmpSize)} -- el segundo pt[1] era pt[2]
     -- If not, return the image as is
     if (ul[1] > img:size(2) or ul[2] > img:size(1) or br[1] < 1 or br[2] < 1) then return img end
     -- Generate gaussian
@@ -264,18 +266,19 @@ function drawSkeleton(img, preds, scores)
             elseif pairRef[i][3] == 4 then color = {1,0,0}
             else color = {.7,0,.7} end
             -- Draw line
-            drawLine(img, preds[pairRef[i][1]], preds[pairRef[i][2]], 4, color, 0)
+            --drawLine(img, preds[pairRef[i][1]], preds[pairRef[i][2]], 4, color, 0)
         end
     end
     return img
 end
 
+--pred y gt tienen [1x20x2]
 function heatmapVisualization(set, idx, pred, inp, gt)
     local set = set or 'valid'
     local hmImg
     local tmpInp,tmpHm
     if not inp then
-        inp, gt = loadData(set,{idx})
+        inp, gt = loadData(set,{idx}) -- AAQQUI
         inp = inp[1]
         gt = gt[1][1]
         tmpInp,tmpHm = inp,gt
@@ -283,19 +286,23 @@ function heatmapVisualization(set, idx, pred, inp, gt)
         tmpInp = inp
         tmpHm = gt or pred
     end
+	-- tmpHm --> 20 images 64x64 with keypoint
+	-- tmpInp --> 1 image with 3 channels (RGB) 256x256
     local nOut,res = tmpHm:size(1),tmpHm:size(3)
     -- Repeat input image, and darken it to overlay heatmaps
     tmpInp = image.scale(tmpInp,res):mul(.3)
     tmpInp[1][1][1] = 1
     hmImg = tmpInp:repeatTensor(nOut,1,1,1)
     if gt then -- Copy ground truth heatmaps to red channel
-        hmImg:sub(1,-1,1,1):add(gt:clone():mul(.7))
+        hmImg:sub(1,-1,1,1):add(gt:clone():mul(.7)) -- gt es label q es out de generateSample
     end
+	
     if pred then -- Copy predicted heatmaps to blue channel
         hmImg:sub(1,-1,3,3):add(pred:clone():mul(.7))
     end
     -- Rescale so it is a little easier to see
     hmImg = image.scale(hmImg:view(nOut*3,res,res),256):view(nOut,3,256,256)
+    
     return hmImg, inp
 end
 

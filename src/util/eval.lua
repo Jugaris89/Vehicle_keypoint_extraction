@@ -14,14 +14,11 @@ end
 
 function calcDists(preds, label, normalize)
     local dists = torch.Tensor(preds:size(2), preds:size(1))
---    print('JAVITOOO')
---    print(torch.Tensor(preds:size(2), preds:size(1)))
---    print(dists) -- sale bn
     local diff = torch.Tensor(2)
     for i = 1,preds:size(1) do
         for j = 1,preds:size(2) do
 --            print(label)
-	    if label[i][j][1] >= 1 and label[i][j][2] >= 1 then -- JAVI es solo menor
+	    if label[i][j][1] > 1 and label[i][j][2] > 1 then 
                 dists[j][i] = torch.dist(label[i][j],preds[i][j])/normalize[i]
             else
                 dists[j][i] = -1
@@ -34,8 +31,6 @@ end
 function getPreds(hm)
     assert(hm:size():size() == 4, 'Input must be 4-D tensor')
     local max, idx = torch.max(hm:view(hm:size(1), hm:size(2), hm:size(3) * hm:size(4)), 3)
-    print('HHOOOLLIII')
-    print(idx)
     local preds = torch.repeatTensor(idx, 1, 1, 2):float()
     preds[{{}, {}, 1}]:apply(function(x) return (x - 1) % hm:size(4) + 1 end)
     preds[{{}, {}, 2}]:add(-1):div(hm:size(3)):floor():add(1)
@@ -63,16 +58,7 @@ function heatmapAccuracy(output, label, thr, idxs)
     local acc = {}
     local avgAcc = 0.0
     local badIdxCount = 0
-    print('DIST')
-    print(dists) -- todo -1
-    print('preds') -- bien
-    print(preds)
-    print('gt') -- todo 1
-    print(gt)
---    print('IDX')
---    print(idxs)
     if not idxs then
-       print('not IDX')
        for i = 1,dists:size(1) do
             acc[i+1] = distAccuracy(dists[i])
     	    if acc[i+1] >= 0 then avgAcc = avgAcc + acc[i+1]
@@ -80,17 +66,15 @@ function heatmapAccuracy(output, label, thr, idxs)
         end
         acc[1] = avgAcc / (dists:size(1) - badIdxCount)
     else
-        print('YES IDX')
         for i = 1,#idxs do
             acc[i+1] = distAccuracy(dists[idxs[i]])
-            print(acc)
-            print('acc')
-	    if acc[i+1] >= 0 then avgAcc = avgAcc + acc[i+1]
+			if acc[i+1] >= 0 then avgAcc = avgAcc + acc[i+1]
             else badIdxCount = badIdxCount + 1 end
+			--heatmapVisualization('valid', idxs[i], preds, inp, gt)
         end
         acc[1] = avgAcc / (#idxs - badIdxCount)
     end
-    print(unpack(acc))
+
     return unpack(acc)
 end
 
@@ -117,7 +101,6 @@ function displayPCK(dists, part_idx, label, title, show_key)
     local t = torch.linspace(0,.5,curve_res)
     local pdj_scores = torch.zeros(num_curves, curve_res)
     local plot_args = {}
-    print(title)
     for curve = 1,num_curves do
         for i = 1,curve_res do
             t[i] = (i-1)*.05

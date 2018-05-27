@@ -1,3 +1,6 @@
+require 'image'
+require 'lfs'
+
 -- Update dimension references to account for intermediate supervision
 ref.predDim = {dataset.nJoints,5}
 ref.outputDim = {}
@@ -13,26 +16,34 @@ local function rnd(x) return math.max(-2*x,math.min(2*x,torch.randn(1)[1]*x)) en
 -- Code to generate training samples from raw images
 function generateSample(set, idx)
     local img = dataset:loadImage(idx)
-    local pts, c, s = dataset:getPartInfo(idx)
+    local pts, c, s = dataset:getPartInfo(idx-11) --hardcoded 11. Loaded image-index is always 11 less than pts load index
     local r = 0
-
     if set == 'train' then
         -- Scale and rotation augmentation
 --        s = s * (2 ^ rnd(opt.scale))
         s = 1
 --        r = 1
-        r = rnd(opt.rotate)
+        r = 1--rnd(opt.rotate)
         if torch.uniform() <= .6 then r = 0 end
     end
-
     local inp = crop(img, c, s, r, opt.inputRes)
     local out = torch.zeros(dataset.nJoints, opt.outputRes, opt.outputRes)
     for i = 1,dataset.nJoints do
---        if pts[i][1] > 1 then -- Checks that there is a ground truth annotation
---            drawGaussian(out[i], transform(pts[i], c, s, r, opt.outputRes), opt.hmGauss)
---        end
+	print('PUNTOS')
+	print(pts[i][1])
+        print(pts[i][2])
+	print(pts)
+        print(temp4)
+        print(idx)
+	image.save('/mnt/md0/jgarcia/pose-hg-train/src/images_input.jpg',img)
+        if pts[i][1] > 1 then -- Checks that there is a ground truth annotation   pts[i][1]
+            drawGaussian(out[i], pts[i], opt.hmGauss) --transform(pts[i], c, s, r, opt.outputRes)
+            lfs.mkdir('/mnt/md0/jgarcia/pose-hg-train/src/images_training/' ..temp4)
+            image.save('/mnt/md0/jgarcia/pose-hg-train/src/images_training/' ..temp4 ..'/' ..i ..'.png',out[i])
+--  	    torch.save('/mnt/md0/jgarcia/pose-hg-train/src/images_training/' ..temp4 ..'/' ..i ..'.txt',pts[i][1])
+--            drawGaussian(out[i], c[i], opt.hmGauss)
+	end
     end
-
     if set == 'train' then
         -- Flipping and color augmentation
         if torch.uniform() < .5 then
@@ -43,20 +54,19 @@ function generateSample(set, idx)
         inp[2]:mul(torch.uniform(0.6,1.4)):clamp(0,1)
         inp[3]:mul(torch.uniform(0.6,1.4)):clamp(0,1)
     end
-
+	image.save('/mnt/md0/jgarcia/pose-hg-train/src/images_training/' ..temp4 ..'/' ..temp4 ..'.png',inp)
     return inp,out
 end
 
 -- Load in a mini-batch of data
 function loadData(set, idxs)
     if type(idxs) == 'table' then idxs = torch.Tensor(idxs) end
-    local nsamples = idxs:size(1)
+    local nsamples = idxs:size(1) --:size(1)
     local input,label
 
     for i = 1,nsamples do
         local tmpInput,tmpLabel
---        print(idxs)
-        tmpInput,tmpLabel = generateSample(set, idxs[i])
+        tmpInput,tmpLabel = generateSample(set, idxs[i]) --idxs[i])
         tmpInput = tmpInput:view(1,unpack(tmpInput:size():totable()))
         tmpLabel = tmpLabel:view(1,unpack(tmpLabel:size():totable()))
         if not input then
@@ -67,7 +77,6 @@ function loadData(set, idxs)
             label = label:cat(tmpLabel,1)
         end
     end
-
     if opt.nStack > 1 then
         -- Set up label for intermediate supervision
         local newLabel = {}

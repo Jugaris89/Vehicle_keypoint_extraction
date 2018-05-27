@@ -67,16 +67,16 @@ function DataLoader:run()
     -- Shuffle indices
     idxs = idxs:index(1,torch.randperm(idxs:size(1)):long()) 
     -- Map indices to training/validation/test split
-    idxs = opt.idxRef[self.split]:index(1,idxs:long())
+--JAVI
+--    idxs = opt.idxRef[self.split]:index(1,idxs:long())
+--    print(idxs:size())
     local n, idx, sample = 0, 1, nil
     local function enqueue()
         while idx <= size and threads:acceptsjob() do
             local indices = idxs:narrow(1, idx, math.min(self.batchsize, size - idx + 1))
             threads:addjob(
                 function(indices)
-                    print('indices')
-		    print(indices)
-		    local inp,out = _G.loadData(_G.split, indices)
+		    local inp,out = _G.loadData(_G.split, indices)--antes estaba solo indices
                     collectgarbage()
                     return {inp,out,indices}
                 end,

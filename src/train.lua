@@ -53,9 +53,7 @@ function step(tag)
             label = applyFn(function (x) return x:cuda() end, label)
         end
 
-        -- Do a forward pass and calculate loss
-        --ERROR AQUI en forward
---        print(input)
+        -- Do a forward pass and calculate loss)
         local output = model:forward(input)
         local err = criterion:forward(output, label)
         avgLoss = avgLoss + err / nIters
@@ -64,7 +62,7 @@ function step(tag)
             model:zeroGradParameters()
             model:backward(input, criterion:backward(output, label))
             optfn(evalFn, param, optimState)
-	else
+		else
             -- Validation: Get flipped output
             output = applyFn(function (x) return x:clone() end, output)
             local flippedOut = model:forward(flip(input))

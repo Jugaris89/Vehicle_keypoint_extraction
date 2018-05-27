@@ -15,14 +15,13 @@ function Dataset:__init()
                         {14,9,4},   {14,15,4},  {15,16,4}}
 
     local annot = {}
-    local tags = {'index','center','istrain','imgname','person'}
+    local tags = {'index','center','istrain','imgname','person','part'}
     local a = hdf5.open(paths.concat(projectDir,'data/mpii/annot_javi.h5'),'r')
     for _,tag in ipairs(tags) do annot[tag] = a:read(tag):all() end
     a:close()
-    annot.index:add(1)
-    annot.person:add(1)
+--    annot.index:add(1)
+--    annot.person:add(1)
 --    annot.part:add(1)
-
     -- Index reference
     if not opt.idxRef then
         local allIdxs = torch.range(1,annot.index:size(1))
@@ -38,8 +37,6 @@ function Dataset:__init()
             tmpAnnot:add(-1)
 
             local validAnnot = hdf5.open(paths.concat(projectDir, 'data/mpii/annot/valid.h5'),'r')
---            print(validAnnot:read('index'):all():size())
---            print(validAnnot:read('person'):all():size())
             local tmpValid = validAnnot:read('index'):all():cat(validAnnot:read('person'):all(),2):long()
             opt.idxRef.valid = torch.zeros(tmpValid:size(1))
             opt.nValidImgs = opt.idxRef.valid:size(1)
@@ -63,8 +60,6 @@ function Dataset:__init()
             -- Set up random training/validation split
             local perm = torch.randperm(opt.idxRef.train:size(1)):long()
             opt.idxRef.valid = opt.idxRef.train:index(1, perm:sub(1,opt.nValidImgs))
-            print('VVAAAAAAAAAAALLLIIDD')
-	    print(opt.idxRef.valid)
             opt.idxRef.train = opt.idxRef.train:index(1, perm:sub(opt.nValidImgs+1,-1))
         end
 
@@ -72,6 +67,7 @@ function Dataset:__init()
     end
 
     self.annot = annot
+	
     self.nsamples = {train=opt.idxRef.train:numel(),
                      valid=opt.idxRef.valid:numel(),
                      test=opt.idxRef.test:numel()}
@@ -86,16 +82,25 @@ function Dataset:size(set)
 end
 
 function Dataset:getPath(idx)
-    print(paths.concat(opt.dataDir,'images',ffi.string(self.annot.imgname[idx]:char():data())))
-    return paths.concat(opt.dataDir,'images',ffi.string(self.annot.imgname[idx]:char():data()))
+	temp=paths.concat(opt.dataDir,'images')
+--	print(idx)
+	temp2=ffi.string(self.annot.imgname[idx]:char():data())
+	temp4=string.gsub(temp2,'.jpg','')
+        temp4=string.gsub(temp4,'/','')
+--      print(temp2)
+	temp3=temp ..temp2
+--	print(temp3)
+--	print(ffi.string(self.annot.imgname[idx]:char():data()))
+	return temp3
+    --return paths.concat(opt.dataDir,'images',ffi.string(self.annot.imgname[idx]:char():data()))
 end
 
 function Dataset:loadImage(idx)
     return image.load(self:getPath(idx))
 end
-
 function Dataset:getPartInfo(idx)
-    local pts = self.annot.center[idx]:clone()
+ --   print(self.annot.part)
+    local pts = self.annot.part[idx]:clone()
     local c = self.annot.center[idx]:clone()
     local s = 1 --self.annot.scale[idx]
     -- Small adjustment so cropping is less likely to take feet out

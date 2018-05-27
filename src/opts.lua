@@ -3,6 +3,7 @@ if not opt then
 projectDir = projectDir or paths.concat(os.getenv('HOME'),'pose-hg-train')
 projectDir = '/mnt/md0/jgarcia/pose-hg-train'
 imageDir ='/media/javier/javier/MPII'
+imageDir ='/mnt/md0/jgarcia/pose-hg-train/data/mpii/images'
 local function parse(arg)
     local cmd = torch.CmdLine()
     cmd:text()
@@ -11,10 +12,10 @@ local function parse(arg)
     cmd:option('-expID',       'default', 'Experiment ID')
     cmd:option('-dataset',        'mpii', 'Dataset choice: mpii | flic')
     cmd:option('-dataDir',  projectDir .. '/data', 'Data directory')
-    cmd:option('-expDir',   projectDir .. '/exp',  'Experiments directory')
+    cmd:option('-expDir',   projectDir .. '/exp_javi',  'Experiments directory')
     cmd:option('-manualSeed',         -1, 'Manually set RNG seed')
     cmd:option('-GPU',                 1, 'Default preferred GPU, if set to -1: no GPU')
-    cmd:option('-finalPredictions',false, 'Generate a final set of predictions at the end of training (default no)')
+    cmd:option('-finalPredictions',true, 'Generate a final set of predictions at the end of training (default no)')
     cmd:option('-nThreads',            4, 'Number of data loading threads')
     cmd:text()
     cmd:text(' ---------- Model options --------------------------------------')
@@ -31,8 +32,8 @@ local function parse(arg)
     cmd:text(' ---------- Snapshot options -----------------------------------')
     cmd:text()
     cmd:option('-snapshot',            5, 'How often to take a snapshot of the model (0 = never)')
-    cmd:option('-saveInput',       false, 'Save input to the network (useful for debugging)')
-    cmd:option('-saveHeatmaps',    false, 'Save output heatmaps')
+    cmd:option('-saveInput',       true, 'Save input to the network (useful for debugging)')
+    cmd:option('-saveHeatmaps',    true, 'Save output heatmaps')
     cmd:text()
     cmd:text(' ---------- Hyperparameter options -----------------------------')
     cmd:text()
@@ -48,11 +49,11 @@ local function parse(arg)
     cmd:text()
     cmd:text(' ---------- Training options -----------------------------------')
     cmd:text()
-    cmd:option('-nEpochs',           100, 'Total number of epochs to run')
-    cmd:option('-trainIters',        8, 'Number of train iterations per epoch')--8000
+    cmd:option('-nEpochs',           3, 'Total number of epochs to run')--100
+    cmd:option('-trainIters',        100, 'Number of train iterations per epoch')--8000
     cmd:option('-trainBatch',          6, 'Mini-batch size')
     cmd:option('-trainBatch',          2, 'Mini-batch size')
-    cmd:option('-validIters',       10, 'Number of validation iterations per epoch') --1000
+    cmd:option('-validIters',       100, 'Number of validation iterations per epoch') --1000
     cmd:option('-validBatch',          1, 'Mini-batch size for validation')
     cmd:option('-nValidImgs',       10, 'Number of images to use for validation. Only relevant if randomValid is set to true')--1000
     cmd:option('-randomValid',     false, 'Whether or not to use a fixed validation set of 2958 images (same as Tompson et al. 2015)')
@@ -62,7 +63,7 @@ local function parse(arg)
     cmd:option('-inputRes',          256, 'Input image resolution')
     cmd:option('-outputRes',          64, 'Output heatmap resolution')
     cmd:option('-scale',             .25, 'Degree of scale augmentation')
-    cmd:option('-rotate',             30, 'Degree of rotation augmentation')
+    cmd:option('-rotate',             0, 'Degree of rotation augmentation')--30
     cmd:option('-hmGauss',             1, 'Heatmap gaussian size')
 
 
