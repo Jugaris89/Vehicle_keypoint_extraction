@@ -16,16 +16,25 @@ local function rnd(x) return math.max(-2*x,math.min(2*x,torch.randn(1)[1]*x)) en
 -- Code to generate training samples from raw images
 function generateSample(set, idx)
     local img = dataset:loadImage(idx)
-    local pts, c, s = dataset:getPartInfo(idx-11) --hardcoded 11. Loaded image-index is always 11 less than pts load index
+    local pts, c, s = dataset:getPartInfo(idx) --hardcoded 11
     local r = 0
     if set == 'train' then
         -- Scale and rotation augmentation
 --        s = s * (2 ^ rnd(opt.scale))
-        s = 1
+        s = 1--img:size(3)
 --        r = 1
         r = 1--rnd(opt.rotate)
         if torch.uniform() <= .6 then r = 0 end
     end
+    print('CENTER')
+    print(c[1])
+    print(c[2])
+    print(img:size(1))
+    print(img:size(2))
+    print(img:size(3))
+-- size() gives channel, height and width in this order
+    c[1]=math.floor(img:size(3)/2) --ignore center notation and take center of input image
+    c[2]=math.floor(img:size(2)/2)
     local inp = crop(img, c, s, r, opt.inputRes)
     local out = torch.zeros(dataset.nJoints, opt.outputRes, opt.outputRes)
     for i = 1,dataset.nJoints do
@@ -37,6 +46,7 @@ function generateSample(set, idx)
         print(idx)
 	image.save('/mnt/md0/jgarcia/pose-hg-train/src/images_input.jpg',img)
         if pts[i][1] > 1 then -- Checks that there is a ground truth annotation   pts[i][1]
+            -- opt.hmGaus = 1
             drawGaussian(out[i], pts[i], opt.hmGauss) --transform(pts[i], c, s, r, opt.outputRes)
             lfs.mkdir('/mnt/md0/jgarcia/pose-hg-train/src/images_training/' ..temp4)
             image.save('/mnt/md0/jgarcia/pose-hg-train/src/images_training/' ..temp4 ..'/' ..i ..'.png',out[i])
@@ -54,7 +64,7 @@ function generateSample(set, idx)
         inp[2]:mul(torch.uniform(0.6,1.4)):clamp(0,1)
         inp[3]:mul(torch.uniform(0.6,1.4)):clamp(0,1)
     end
-	image.save('/mnt/md0/jgarcia/pose-hg-train/src/images_training/' ..temp4 ..'/' ..temp4 ..'.png',inp)
+	image.save('/mnt/md0/jgarcia/pose-hg-train/src/images_training/' ..temp4 ..'/' ..temp4 ..'.png',img)
     return inp,out
 end
 
@@ -69,13 +79,17 @@ function loadData(set, idxs)
         tmpInput,tmpLabel = generateSample(set, idxs[i]) --idxs[i])
         tmpInput = tmpInput:view(1,unpack(tmpInput:size():totable()))
         tmpLabel = tmpLabel:view(1,unpack(tmpLabel:size():totable()))
-        if not input then
+        print('CROP')
+--        print(input:size())
+        print(tmpInput:size())
+        print(tmpLabel:size())
+  --      if not input then
             input = tmpInput
             label = tmpLabel
-        else
-            input = input:cat(tmpInput,1)
-            label = label:cat(tmpLabel,1)
-        end
+  --      else
+  --          input = input:cat(tmpInput,1)
+  --          label = label:cat(tmpLabel,1)
+  --      end
     end
     if opt.nStack > 1 then
         -- Set up label for intermediate supervision

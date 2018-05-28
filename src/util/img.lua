@@ -86,6 +86,9 @@ end
 
 function crop(img, center, scale, rot, res)
     local ndim = img:nDimension()
+    print('CENTER2')
+    print(center[1] ..center[2])
+    image.save('/mnt/md0/jgarcia/pose-hg-train/src/img.jpg',img)
     if ndim == 2 then img = img:view(1,img:size(1),img:size(2)) end
     local ht,wd = img:size(2), img:size(3)
     local tmpImg,newImg = img, torch.zeros(img:size(1), res, res)
@@ -209,9 +212,14 @@ function drawGaussian(img, pt, sigma)
     -- Draw a 2D gaussian
     -- Check that any part of the gaussian is in-bounds
     local tmpSize = math.ceil(3*sigma)
+    print('drawGaussian')
     local ul = {math.floor(pt[1] - tmpSize), math.floor(pt[2] - tmpSize)}  --el segundo pt[1] era pt[2]
     local br = {math.floor(pt[1] + tmpSize), math.floor(pt[2] + tmpSize)} -- el segundo pt[1] era pt[2]
     -- If not, return the image as is
+    print(ul[1])
+    print(ul[2])
+    print(br[1])
+    print(br[2])
     if (ul[1] > img:size(2) or ul[2] > img:size(1) or br[1] < 1 or br[2] < 1) then return img end
     -- Generate gaussian
     local size = 2*tmpSize + 1
@@ -222,6 +230,15 @@ function drawGaussian(img, pt, sigma)
     -- Image range
     local img_x = {math.max(1, ul[1]), math.min(br[1], img:size(2))}
     local img_y = {math.max(1, ul[2]), math.min(br[2], img:size(1))}
+    print('G_X')
+    print(g_x[1])
+    print(g_x[2])
+    print(g_y[1])
+    print(g_y[2])
+    print(img_x[1])
+    print(img_x[2])
+    print(img_y[1])
+    print(img_y[2])
     assert(g_x[1] > 0 and g_y[1] > 0)
     img:sub(img_y[1], img_y[2], img_x[1], img_x[2]):cmax(g:sub(g_y[1], g_y[2], g_x[1], g_x[2]))
     return img

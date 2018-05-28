@@ -88,7 +88,7 @@ function Dataset:getPath(idx)
 	temp4=string.gsub(temp2,'.jpg','')
         temp4=string.gsub(temp4,'/','')
 --      print(temp2)
-	temp3=temp ..temp2
+	temp3=temp ..'/' ..temp2
 --	print(temp3)
 --	print(ffi.string(self.annot.imgname[idx]:char():data()))
 	return temp3
