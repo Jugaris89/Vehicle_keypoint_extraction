@@ -1,17 +1,3 @@
-local crayon = require("crayon")
-
--- A clean server should be running on the test_port with:
--- docker run -it -p 7998:8888 -p 7999:8889 --name crayon_lua_test alband/crayon
-local test_port = 7999
-local cc = crayon.CrayonClient("localhost", test_port)
-
--- Check empty
-local xp_list = cc:get_experiment_names()
-for k,v in pairs(xp_list) do
-  error("The server should be empty")
-end
-
-
 -- Prepare tensors for saving network output
 local validSamples = opt.validIters * opt.validBatch
 saved = {idxs = torch.Tensor(validSamples),
@@ -33,7 +19,7 @@ if opt.saveHeatmaps then saved.heatmaps = torch.Tensor(validSamples, unpack(ref.
 
 -- Main processing step
 function step(tag)
-    local avgLoss, avgAcc = 0.0, 0.0
+    --local avgLoss, avgAcc = 0.0, 0.0
     local output, err, idx
     local param, gradparam = model:getParameters()
     local function evalFn(x) return criterion.output, gradparam end
@@ -44,6 +30,7 @@ function step(tag)
     else
         model:evaluate()
         if tag == 'predict' then
+			
             print("==> Generating predictions...")
             local nSamples = dataset:size('test')
             saved = {idxs = torch.Tensor(nSamples),
@@ -57,7 +44,7 @@ function step(tag)
     end
 
     local nIters = opt[set .. 'Iters']
-	local avgLoss1 = cc:create_experiment("avgLoss")
+	
     for i,sample in loader[set]:run() do
         xlua.progress(i, nIters)
         local input, label, indices = unpack(sample)
@@ -99,18 +86,22 @@ function step(tag)
         avgAcc = avgAcc + accuracy(output, label) / nIters
 		print("LOOSSSS")
 		print(avgLoss)
+		print(set)
 		print("END_LOSS")
 		--avgLoss=100000*avgLoss
 		--avgLoss=math.floor(avgLoss)
 		--print(avgLoss)
 		-- Send to tensorBoard
-		avgLoss1:add_scalar_value("avgLoss", avgLoss)
-		xp_list = cc:get_experiment_names()
-		for k,v in pairs(xp_list) do
-		  if v ~= "avgLoss" then
-			error("The server should not contain xp: "..v)
-	      end
+		if set == 'train' then
+			avgLoss1:add_scalar_value("avgLoss", avgLoss)
+		else 
+			if set == 'predict' or set == 'test' then
+				avgLoss2:add_scalar_value("avgLoss2", avgLoss)
+			else
+				avgLoss3:add_scalar_value("avgLoss3", avgLoss)
+			end
 		end
+		
     end
 
 

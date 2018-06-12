@@ -1,3 +1,16 @@
+local crayon = require("crayon")
+
+-- A clean server should be running on the test_port with:
+-- docker run -it -p 7998:8888 -p 7999:8889 --name crayon_lua_test alband/crayon
+local test_port = 7999
+local cc = crayon.CrayonClient("localhost", test_port)
+
+-- Check empty
+local xp_list = cc:get_experiment_names()
+for k,v in pairs(xp_list) do
+  error("The server should be empty")
+end
+
 require 'paths'
 paths.dofile('ref.lua')     -- Parse command line input and do global variable initialization
 paths.dofile('model.lua')   -- Read in network model
@@ -7,11 +20,15 @@ paths.dofile('train.lua')   -- Load up training/testing functions
 torch.setnumthreads(1)
 local Dataloader = paths.dofile('util/dataloader.lua')
 loader = Dataloader.create(opt, dataset, ref)
-
+	
 -- Initialize logs
 ref.log = {}
 ref.log.train = Logger(paths.concat(opt.save, 'train.log'), opt.continue)
 ref.log.valid = Logger(paths.concat(opt.save, 'valid.log'), opt.continue)
+avgLoss, avgAcc = 0.0, 0.0
+avgLoss1 = cc:create_experiment("avgLoss")
+avgLoss2 = cc:create_experiment("avgLoss2")
+avgLoss3 = cc:create_experiment("avgLoss3")
 
 -- Main training loop
 for i=1,opt.nEpochs do
@@ -29,7 +46,7 @@ opt.lastEpoch = epoch - 1
 model:clearState()
 torch.save(paths.concat(opt.save,'options.t7'), opt)
 torch.save(paths.concat(opt.save,'optimState.t7'), optimState)
-torch.save(paths.concat(opt.save,'final_model.t7'), model)
+torch.save(paths.concat(opt.save,'final_model_300518.t7'), model)
 
 -- Generate final predictions on validation set
 if opt.finalPredictions then
