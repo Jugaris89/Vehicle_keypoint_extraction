@@ -57,8 +57,37 @@ function heatmapAccuracy(output, label, thr, idxs)
     local dists = calcDists(preds, gt, torch.ones(preds:size(1))*opt.outputRes/10)
     local acc = {}
     local avgAcc = 0.0
-    local badIdxCount = 0
-    if not idxs then
+    local sum_err = 0
+    local sum = 1
+    local badIdxCount, error_keypoint3 = 0
+	local err1, err2 = 0
+	print('JJAAVIIERRRR')
+	print(gt-preds)
+	for i = 1,20 do
+		print(gt[1])
+		err1=math.abs(gt[1][i][1]-preds[1][i][1])
+		err2=math.abs(gt[1][i][2]-preds[1][i][2])
+		print(err1)
+		print(err2)
+		print(math.abs(err1 - err2))
+		print()
+		print('ERRROR')
+		print(math.sqrt(err1*err1 + err2*err2))
+		error_keypoint3 = math.sqrt(err1*err1 + err2*err2)
+		if not (gt[1][i][1] == 1) then
+			sum = sum + 1
+			sum_err = sum_err + error_keypoint3
+			error_keypoint:add_scalar_value("error_keypoint2", sum_err)--err1)
+			--error_keypoint2:add_scalar_value("error_keypoint3", err2)
+		end
+	end
+	print("SUM ERR")
+	print(sum_err)
+	print(sum)
+	--error_keypoint:add_scalar_value("error_keypoint2", sum_err / sum)
+	sum_per_image = sum_per_image + sum_err / sum
+	--print(gt-preds)
+	if not idxs then
        for i = 1,dists:size(1) do
             acc[i+1] = distAccuracy(dists[i])
     	    if acc[i+1] >= 0 then avgAcc = avgAcc + acc[i+1]

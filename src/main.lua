@@ -29,7 +29,9 @@ avgLoss, avgAcc = 0.0, 0.0
 avgLoss1 = cc:create_experiment("avgLoss")
 avgLoss2 = cc:create_experiment("avgLoss2")
 avgLoss3 = cc:create_experiment("avgLoss3")
-
+error_keypoint = cc:create_experiment("error_keypoint2")
+error_keypoint2 = cc:create_experiment("error_keypoint3")
+error_keypoint3 = cc:create_experiment("error_keypoint4")
 -- Main training loop
 for i=1,opt.nEpochs do
     print("==> Starting epoch: " .. epoch .. "/" .. (opt.nEpochs + opt.epochNumber - 1))

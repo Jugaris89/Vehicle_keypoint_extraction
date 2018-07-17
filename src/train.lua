@@ -20,15 +20,18 @@ if opt.saveHeatmaps then saved.heatmaps = torch.Tensor(validSamples, unpack(ref.
 -- Main processing step
 function step(tag)
     --local avgLoss, avgAcc = 0.0, 0.0
+	totalLoss=0
     local output, err, idx
     local param, gradparam = model:getParameters()
     local function evalFn(x) return criterion.output, gradparam end
-
+    sum_per_image = 1
     if tag == 'train' then
         model:training()
+        --modelSoftmax:training()
         set = 'train'
     else
         model:evaluate()
+        --modelSoftmax:evaluate()
         if tag == 'predict' then
 			
             print("==> Generating predictions...")
@@ -47,18 +50,29 @@ function step(tag)
 	
     for i,sample in loader[set]:run() do
         xlua.progress(i, nIters)
-        local input, label, indices = unpack(sample)
+        local input, label, occlusion, indices = unpack(sample)
+		--print('OCCLUDED')
+		--for i = 1,20 do
+		--	print(occlusion[i])
+		--	print(label_occlusion[i])
+		--end
 
         if opt.GPU ~= -1 then
             -- Convert to CUDA
             input = applyFn(function (x) return x:cuda() end, input)
             label = applyFn(function (x) return x:cuda() end, label)
+	        --label_occlusion = applyFn(function (x) return x:cuda() end, label_occlusion)
+            --occlusion = applyFn(function (x) return x:cuda() end, occlusion)
         end
 
         -- Do a forward pass and calculate loss)
         local output = model:forward(input)
+	    --local output2 = modelSoftmax:forward(occlusion)
+	    --local errSoftmax = criterion:forward(output2,label_occlusion)
         local err = criterion:forward(output, label)
-        avgLoss = avgLoss + err / nIters
+		totalLoss=totalLoss+err
+		avgLoss=totalLoss/nIters
+        --avgLoss = avgLoss + err / nIters
         if tag == 'train' then
             -- Training: Do backpropagation and optimization
             model:zeroGradParameters()
@@ -84,17 +98,19 @@ function step(tag)
 
         -- Calculate accuracy
         avgAcc = avgAcc + accuracy(output, label) / nIters
-		print("LOOSSSS")
-		print(avgLoss)
-		print(set)
-		print("END_LOSS")
+		--print("LOOSSSS")
+		--print(avgLoss)
+		--print(set)
+		--print("END_LOSS")
 		--avgLoss=100000*avgLoss
 		--avgLoss=math.floor(avgLoss)
 		--print(avgLoss)
 		-- Send to tensorBoard
 		if set == 'train' then
 			avgLoss1:add_scalar_value("avgLoss", avgLoss)
+			error_keypoint2:add_scalar_value("mean_error_keypoint_train", sum_per_image/(i+1))
 		else 
+			error_keypoint3:add_scalar_value("mean_error_keypoint_valid", sum_per_image/(i+1))
 			if set == 'predict' or set == 'test' then
 				avgLoss2:add_scalar_value("avgLoss2", avgLoss)
 			else
@@ -102,6 +118,8 @@ function step(tag)
 			end
 		end
 		
+	
+			
     end
 
 

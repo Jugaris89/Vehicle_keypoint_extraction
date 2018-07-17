@@ -28,7 +28,7 @@ end
 
 -- m = torch.load('/mnt/md0/torch/umich-stacked-hourglass/umich-stacked-hourglass.t7')   -- Load pre-trained model
 m = torch.load('/mnt/md0/jgarcia/pose-hg-demo/../pose-hg-train/src/final_model.t7')
-m = torch.load('/mnt/md0/jgarcia/pose-hg-train/exp_javi/mpii/default/final_model.t7')
+m = torch.load('/mnt/md0/jgarcia/pose-hg-train/exp_javi_1_2/mpii/javito0106/final_model_300518.t7')
 
 if arg[1] == 'demo' then
     idxs = torch.Tensor({ 695, 3611, 2486, 7424, 10032, 5, 4829})
@@ -70,7 +70,14 @@ for i = 1,nsamples do
     -- Get predictions (hm and img refer to the coordinate space)
     local preds_hm, preds_img = getPreds(hm, center, scale)
     preds[i]:copy(preds_img)
-    torch.save('/mnt/md0/jgarcia/pose-hg-train/src/images_training/' ..temp4 ..'/' ..'pred.txt', preds,'ascii')
+--   print('ERRRRRRRROORRRRRR')
+--    print(preds:size())
+--    print(pts:size())
+--    err1=(preds[i] - center[i][1])
+--    err2=(preds[i] - center[i][2])
+--    error_javi=math.sqrt(err1*err1 - err2*err2)
+--    print(error_javi)
+--    torch.save('/mnt/md0/jgarcia/pose-hg-train/src/images_training/' ..temp4 ..'/' ..'pred.txt', preds,'ascii')
     xlua.progress(i,nsamples)
 	
     -- Display the result

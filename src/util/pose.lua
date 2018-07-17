@@ -16,7 +16,11 @@ local function rnd(x) return math.max(-2*x,math.min(2*x,torch.randn(1)[1]*x)) en
 -- Code to generate training samples from raw images
 function generateSample(set, idx)
     local img = dataset:loadImage(idx)
-    local pts, c, s = dataset:getPartInfo(idx) --hardcoded 11
+    pts, c, s, o = dataset:getPartInfo(idx) --hardcoded 11 -- JAVI estaban como local
+--	print('OCCLUDED')
+--	for i = 1,20 do
+--		print(o[i])
+--	end
     local r = 0
     if set == 'train' then
         -- Scale and rotation augmentation
@@ -26,30 +30,18 @@ function generateSample(set, idx)
         r = 1--rnd(opt.rotate)
         if torch.uniform() <= .6 then r = 0 end
     end
-    print('CENTER')
-    print(c[1])
-    print(c[2])
-    print(img:size(1))
-    print(img:size(2))
-    print(img:size(3))
 -- size() gives channel, height and width in this order
     c[1]=math.floor(img:size(3)/2) --ignore center notation and take center of input image
     c[2]=math.floor(img:size(2)/2)
     local inp = crop(img, c, s, r, opt.inputRes)
     local out = torch.zeros(dataset.nJoints, opt.outputRes, opt.outputRes)
     for i = 1,dataset.nJoints do
-	print('PUNTOS')
-	print(pts[i][1])
-        print(pts[i][2])
-	print(pts)
-        print(temp4)
-        print(idx)
-	image.save('/mnt/md0/jgarcia/pose-hg-train/src/images_input.jpg',img)
+--	image.save('/mnt/md0/jgarcia/pose-hg-train/src/images_input.jpg',img)
         if pts[i][1] > 1 then -- Checks that there is a ground truth annotation   pts[i][1]
             -- opt.hmGaus = 1
             drawGaussian(out[i], pts[i], opt.hmGauss) --transform(pts[i], c, s, r, opt.outputRes)
-            lfs.mkdir('/mnt/md0/jgarcia/pose-hg-train/src/images_training/' ..temp4)
-            image.save('/mnt/md0/jgarcia/pose-hg-train/src/images_training/' ..temp4 ..'/' ..i ..'.png',out[i])
+--            lfs.mkdir('/mnt/md0/jgarcia/pose-hg-train/src/images_training/' ..temp4)
+--            image.save('/mnt/md0/jgarcia/pose-hg-train/src/images_training/' ..temp4 ..'/' ..i ..'.png',out[i])
 --  	    torch.save('/mnt/md0/jgarcia/pose-hg-train/src/images_training/' ..temp4 ..'/' ..i ..'.txt',pts[i][1])
 --            drawGaussian(out[i], c[i], opt.hmGauss)
 	end
@@ -64,28 +56,32 @@ function generateSample(set, idx)
         inp[2]:mul(torch.uniform(0.6,1.4)):clamp(0,1)
         inp[3]:mul(torch.uniform(0.6,1.4)):clamp(0,1)
     end
-	image.save('/mnt/md0/jgarcia/pose-hg-train/src/images_training/' ..temp4 ..'/' ..temp4 ..'.png',img)
-    return inp,out
+--	image.save('/mnt/md0/jgarcia/pose-hg-train/src/images_training/' ..temp4 ..'/' ..temp4 ..'.png',img)
+    return inp,out,o
 end
 
 -- Load in a mini-batch of data
 function loadData(set, idxs)
     if type(idxs) == 'table' then idxs = torch.Tensor(idxs) end
     local nsamples = idxs:size(1) --:size(1)
-    local input,label
+    local input,label--, Occlu, Occlu_inp
 
     for i = 1,nsamples do
         local tmpInput,tmpLabel
-        tmpInput,tmpLabel = generateSample(set, idxs[i]) --idxs[i])
+        tmpInput,tmpLabel, tmpOcclu = generateSample(set, idxs[i]) --idxs[i])
         tmpInput = tmpInput:view(1,unpack(tmpInput:size():totable()))
         tmpLabel = tmpLabel:view(1,unpack(tmpLabel:size():totable()))
-        print('CROP')
+        --tmpOcclu = tmpOcclu:view(1,unpack(tmpLabel:size():totable()))
+--        print('CROP')
 --        print(input:size())
-        print(tmpInput:size())
-        print(tmpLabel:size())
+--        print(tmpInput:size())
+--        print(tmpLabel:size())
   --      if not input then
-            input = tmpInput
-            label = tmpLabel
+        input = tmpInput
+        label = tmpLabel
+        Occlu = tmpOcclu
+--JAVIIII
+	   -- Occlu_inp=tmpOcclu_inp
   --      else
   --          input = input:cat(tmpInput,1)
   --          label = label:cat(tmpLabel,1)
@@ -97,7 +93,7 @@ function loadData(set, idxs)
         for i = 1,opt.nStack do newLabel[i] = label end
         return input,newLabel
     else
-        return input,label
+        return input,label--,Occlu,Occlu_inp
     end
 end
 
@@ -106,6 +102,7 @@ function postprocess(set, idx, output)
     if type(output) == 'table' then tmpOutput = output[#output]
     else tmpOutput = output end
     local p = getPreds(tmpOutput)
+
     local scores = torch.zeros(p:size(1),p:size(2),1)
 
     -- Very simple post-processing step to improve performance at tight PCK thresholds
@@ -125,7 +122,7 @@ function postprocess(set, idx, output)
     -- Transform predictions back to original coordinate space
     local p_tf = torch.zeros(p:size())
     for i = 1,p:size(1) do
-        _,c,s = dataset:getPartInfo(idx[i])
+        _,c,s,o = dataset:getPartInfo(idx[i])
         p_tf[i]:copy(transformPreds(p[i], c, s, opt.outputRes))
     end
     

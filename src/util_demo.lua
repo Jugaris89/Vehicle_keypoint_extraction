@@ -19,9 +19,9 @@ function loadAnnotations(set)
     annot = {}
 
     -- Read in annotation information from hdf5 file
-    local tags = {'center'}
+    local tags = {'center','part','scale'}
     for _,tag in ipairs(tags) do annot[tag] = a:read(tag):all() end
-    annot.nsamples = annot.center:size()[1]
+    annot.nsamples = annot.part:size()[1]
     a:close()
 
     -- Load in image file names

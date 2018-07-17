@@ -76,9 +76,9 @@ function DataLoader:run()
             local indices = idxs:narrow(1, idx, math.min(self.batchsize, size - idx + 1))
             threads:addjob(
                 function(indices)
-		    local inp,out = _G.loadData(_G.split, indices)--antes estaba solo indices
+		            local inp,out,inp_occlussion, out_occlusion = _G.loadData(_G.split, indices)--antes estaba solo indices
                     collectgarbage()
-                    return {inp,out,indices}
+                    return {inp,out,inp_occlusion,out_occlusion,indices}
                 end,
                 function(_sample_) sample = _sample_ end, indices
             )

@@ -12,7 +12,7 @@ local function parse(arg)
     cmd:option('-expID',       'default', 'Experiment ID')
     cmd:option('-dataset',        'mpii', 'Dataset choice: mpii | flic')
     cmd:option('-dataDir',  projectDir .. '/data', 'Data directory')
-    cmd:option('-expDir',   projectDir .. '/exp_javi',  'Experiments directory')
+    cmd:option('-expDir',   projectDir .. '/exp_javi_2',  'Experiments directory')
     cmd:option('-manualSeed',         -1, 'Manually set RNG seed')
     cmd:option('-GPU',                 1, 'Default preferred GPU, if set to -1: no GPU')
     cmd:option('-finalPredictions',true, 'Generate a final set of predictions at the end of training (default no)')
@@ -49,13 +49,13 @@ local function parse(arg)
     cmd:text()
     cmd:text(' ---------- Training options -----------------------------------')
     cmd:text()
-    cmd:option('-nEpochs',           3, 'Total number of epochs to run')--100
-    cmd:option('-trainIters',        100, 'Number of train iterations per epoch')--8000
+    cmd:option('-nEpochs',           100, 'Total number of epochs to run')--100
+    cmd:option('-trainIters',        1000, 'Number of train iterations per epoch')--8000
     cmd:option('-trainBatch',          6, 'Mini-batch size')
     cmd:option('-trainBatch',          2, 'Mini-batch size')
-    cmd:option('-validIters',       100, 'Number of validation iterations per epoch') --1000
+    cmd:option('-validIters',       500, 'Number of validation iterations per epoch') --1000
     cmd:option('-validBatch',          1, 'Mini-batch size for validation')
-    cmd:option('-nValidImgs',       10, 'Number of images to use for validation. Only relevant if randomValid is set to true')--1000
+    cmd:option('-nValidImgs',       500, 'Number of images to use for validation. Only relevant if randomValid is set to true')--1000
     cmd:option('-randomValid',     false, 'Whether or not to use a fixed validation set of 2958 images (same as Tompson et al. 2015)')
     cmd:text()
     cmd:text(' ---------- Data options ---------------------------------------')

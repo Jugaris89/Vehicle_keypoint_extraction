@@ -17,6 +17,7 @@ elseif opt.loadModel ~= 'none' then
 else
     print('==> Creating model from file: models/' .. opt.netType .. '.lua')
     model = createModel(modelArgs)
+   -- modelSoftmax = createModelSoftmax(modelArgs)
 end
 
 
@@ -29,6 +30,7 @@ if opt.GPU ~= -1 then
     -- Convert model to CUDA
     print('==> Converting model to CUDA')
     model:cuda()
+   -- modelSoftmax:cuda()
     criterion:cuda()
     
     cudnn.fastest = true
