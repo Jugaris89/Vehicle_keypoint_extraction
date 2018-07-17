@@ -1,3 +1,4 @@
+require 'image'
 -- Prepare tensors for saving network output
 local validSamples = opt.validIters * opt.validBatch
 saved = {idxs = torch.Tensor(validSamples),
@@ -50,7 +51,7 @@ function step(tag)
 	
     for i,sample in loader[set]:run() do
         xlua.progress(i, nIters)
-        local input, label, occlusion, indices = unpack(sample)
+        local input, label, indices = unpack(sample)
 		--print('OCCLUDED')
 		--for i = 1,20 do
 		--	print(occlusion[i])
@@ -67,6 +68,9 @@ function step(tag)
 
         -- Do a forward pass and calculate loss)
         local output = model:forward(input)
+		print('FFFOOORRRWWWARDDD')
+		--print(output[1][1][1])
+		--image.save('/home/javier/prueba2.jpg',output[1][1][1])
 	    --local output2 = modelSoftmax:forward(occlusion)
 	    --local errSoftmax = criterion:forward(output2,label_occlusion)
         local err = criterion:forward(output, label)
@@ -77,6 +81,9 @@ function step(tag)
             -- Training: Do backpropagation and optimization
             model:zeroGradParameters()
             model:backward(input, criterion:backward(output, label))
+			--print('OOOUUUUTTTPPPPUUUUUTTT')
+			--print(label[1][1][20])
+			--image.save('/home/javier/prueba.jpg',output[1][1][1])
             optfn(evalFn, param, optimState)
 		else
             -- Validation: Get flipped output
@@ -94,6 +101,8 @@ function step(tag)
             if opt.saveHeatmaps then saved.heatmaps:sub(tmpIdx, tmpIdx+bs-1):copy(tmpOut) end
             saved.idxs:sub(tmpIdx, tmpIdx+bs-1):copy(indices)
             saved.preds:sub(tmpIdx, tmpIdx+bs-1):copy(postprocess(set,indices,output))
+			print('PRRREEEEDDS')
+			print(postprocess(set,indices,output))
         end
 
         -- Calculate accuracy

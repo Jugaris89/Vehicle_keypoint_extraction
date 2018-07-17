@@ -57,7 +57,7 @@ function generateSample(set, idx)
         inp[3]:mul(torch.uniform(0.6,1.4)):clamp(0,1)
     end
 --	image.save('/mnt/md0/jgarcia/pose-hg-train/src/images_training/' ..temp4 ..'/' ..temp4 ..'.png',img)
-    return inp,out,o
+    return inp,out
 end
 
 -- Load in a mini-batch of data
@@ -68,7 +68,7 @@ function loadData(set, idxs)
 
     for i = 1,nsamples do
         local tmpInput,tmpLabel
-        tmpInput,tmpLabel, tmpOcclu = generateSample(set, idxs[i]) --idxs[i])
+        tmpInput,tmpLabel = generateSample(set, idxs[i]) --idxs[i])
         tmpInput = tmpInput:view(1,unpack(tmpInput:size():totable()))
         tmpLabel = tmpLabel:view(1,unpack(tmpLabel:size():totable()))
         --tmpOcclu = tmpOcclu:view(1,unpack(tmpLabel:size():totable()))
@@ -79,7 +79,7 @@ function loadData(set, idxs)
   --      if not input then
         input = tmpInput
         label = tmpLabel
-        Occlu = tmpOcclu
+       -- Occlu = tmpOcclu
 --JAVIIII
 	   -- Occlu_inp=tmpOcclu_inp
   --      else
