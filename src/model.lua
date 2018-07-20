@@ -17,6 +17,7 @@ elseif opt.loadModel ~= 'none' then
 else
     print('==> Creating model from file: models/' .. opt.netType .. '.lua')
     model = createModel(modelArgs)
+    --model_javi = model_javi(modelArgs)
    -- modelSoftmax = createModelSoftmax(modelArgs)
 end
 

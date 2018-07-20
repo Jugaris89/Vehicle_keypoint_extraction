@@ -17,10 +17,6 @@ local function rnd(x) return math.max(-2*x,math.min(2*x,torch.randn(1)[1]*x)) en
 function generateSample(set, idx)
     local img = dataset:loadImage(idx)
     pts, c, s, o = dataset:getPartInfo(idx) --hardcoded 11 -- JAVI estaban como local
---	print('OCCLUDED')
---	for i = 1,20 do
---		print(o[i])
---	end
     local r = 0
     if set == 'train' then
         -- Scale and rotation augmentation
@@ -57,29 +53,26 @@ function generateSample(set, idx)
         inp[3]:mul(torch.uniform(0.6,1.4)):clamp(0,1)
     end
 --	image.save('/mnt/md0/jgarcia/pose-hg-train/src/images_training/' ..temp4 ..'/' ..temp4 ..'.png',img)
-    return inp,out
+	--table.insert(out,o_gt)
+    return inp,out,o
 end
 
 -- Load in a mini-batch of data
 function loadData(set, idxs)
     if type(idxs) == 'table' then idxs = torch.Tensor(idxs) end
     local nsamples = idxs:size(1) --:size(1)
-    local input,label--, Occlu, Occlu_inp
+    local input,label,Occlu--, Occlu_inp
 
     for i = 1,nsamples do
-        local tmpInput,tmpLabel
-        tmpInput,tmpLabel = generateSample(set, idxs[i]) --idxs[i])
+        local tmpInput,tmpLabel,tmpOcc
+        tmpInput,tmpLabel,tmpOcc = generateSample(set, idxs[i]) --idxs[i])
         tmpInput = tmpInput:view(1,unpack(tmpInput:size():totable()))
         tmpLabel = tmpLabel:view(1,unpack(tmpLabel:size():totable()))
-        --tmpOcclu = tmpOcclu:view(1,unpack(tmpLabel:size():totable()))
---        print('CROP')
---        print(input:size())
---        print(tmpInput:size())
---        print(tmpLabel:size())
-  --      if not input then
+        tmpOcc = tmpOcc:view(1,unpack(tmpOcc:size():totable()))
+	tmpOcc = tmpOcc:view(1,20)
         input = tmpInput
         label = tmpLabel
-       -- Occlu = tmpOcclu
+        Occlu = tmpOcc
 --JAVIIII
 	   -- Occlu_inp=tmpOcclu_inp
   --      else
@@ -90,10 +83,14 @@ function loadData(set, idxs)
     if opt.nStack > 1 then
         -- Set up label for intermediate supervision
         local newLabel = {}
-        for i = 1,opt.nStack do newLabel[i] = label end
-        return input,newLabel
+	local newOcc = {}
+        for i = 1,opt.nStack do 
+		newLabel[i] = label 
+		newOcc[i] = Occlu
+	end
+        return input,newLabel,newOcc
     else
-        return input,label--,Occlu,Occlu_inp
+        return input,label,Occlu--,Occlu,Occlu_inp
     end
 end
 
@@ -121,18 +118,27 @@ function postprocess(set, idx, output)
 
     -- Transform predictions back to original coordinate space
     local p_tf = torch.zeros(p:size())
+	local gt = {}
     for i = 1,p:size(1) do
         _,c,s,o = dataset:getPartInfo(idx[i])
+		gt[i] = _
         p_tf[i]:copy(transformPreds(p[i], c, s, opt.outputRes))
     end
-    
     return p_tf:cat(p,3):cat(scores,3)
 end
 
 function accuracy(output,label)
-    if type(output) == 'table' then
-        return heatmapAccuracy(output[#output],label[#output],nil,dataset.accIdxs)
+	local output_hm = {}
+	local label_hm = {}
+	for i=1,16 do
+			if i % 2 == 1 then
+				table.insert(output_hm,output[i])
+				table.insert(label_hm,label[i])
+			end
+	end
+    if type(output_hm) == 'table' then
+        return heatmapAccuracy(output_hm[#output_hm],label_hm[#output_hm],nil,dataset.accIdxs)
     else
-        return heatmapAccuracy(output,label,nil,dataset.accIdxs)
+        return heatmapAccuracy(output_hm,label_hm,nil,dataset.accIdxs)
     end
 end

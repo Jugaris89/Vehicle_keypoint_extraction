@@ -61,18 +61,9 @@ function heatmapAccuracy(output, label, thr, idxs)
     local sum = 1
     local badIdxCount, error_keypoint3 = 0
 	local err1, err2 = 0
-	print('JJAAVIIERRRR')
-	print(gt-preds)
 	for i = 1,20 do
-		print(gt[1])
 		err1=math.abs(gt[1][i][1]-preds[1][i][1])
 		err2=math.abs(gt[1][i][2]-preds[1][i][2])
-		print(err1)
-		print(err2)
-		print(math.abs(err1 - err2))
-		print()
-		print('ERRROR')
-		print(math.sqrt(err1*err1 + err2*err2))
 		error_keypoint3 = math.sqrt(err1*err1 + err2*err2)
 		if not (gt[1][i][1] == 1) then
 			sum = sum + 1
@@ -81,9 +72,6 @@ function heatmapAccuracy(output, label, thr, idxs)
 			--error_keypoint2:add_scalar_value("error_keypoint3", err2)
 		end
 	end
-	print("SUM ERR")
-	print(sum_err)
-	print(sum)
 	--error_keypoint:add_scalar_value("error_keypoint2", sum_err / sum)
 	sum_per_image = sum_per_image + sum_err / sum
 	--print(gt-preds)

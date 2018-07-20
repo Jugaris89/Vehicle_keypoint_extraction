@@ -1,5 +1,3 @@
-require 'image'
-require 'cunn'
 -- Prepare tensors for saving network output
 local validSamples = opt.validIters * opt.validBatch
 saved = {idxs = torch.Tensor(validSamples),
@@ -21,22 +19,17 @@ if opt.saveHeatmaps then saved.heatmaps = torch.Tensor(validSamples, unpack(ref.
 
 -- Main processing step
 function step(tag)
-    --local avgLoss, avgAcc = 0.0, 0.0
-	totalLoss=0
+    local avgLoss, avgAcc = 0.0, 0.0
     local output, err, idx
     local param, gradparam = model:getParameters()
     local function evalFn(x) return criterion.output, gradparam end
-    sum_per_image = 1
+
     if tag == 'train' then
         model:training()
-        --modelSoftmax:training()
---	model_javi:training()
         set = 'train'
     else
         model:evaluate()
-        --modelSoftmax:evaluate()
         if tag == 'predict' then
-			
             print("==> Generating predictions...")
             local nSamples = dataset:size('test')
             saved = {idxs = torch.Tensor(nSamples),
@@ -50,63 +43,25 @@ function step(tag)
     end
 
     local nIters = opt[set .. 'Iters']
-	
     for i,sample in loader[set]:run() do
         xlua.progress(i, nIters)
-        local input, label,occ, indices = unpack(sample)
-		nn.utils.recursiveType(occ, 'torch.CudaTensor') -- convert occ to cuda tensor
+        local input, label, indices = unpack(sample)
 
         if opt.GPU ~= -1 then
             -- Convert to CUDA
             input = applyFn(function (x) return x:cuda() end, input)
             label = applyFn(function (x) return x:cuda() end, label)
-	        --label_occlusion = applyFn(function (x) return x:cuda() end, label_occlusion)
-            --occlusion = applyFn(function (x) return x:cuda() end, occlusion)
         end
 
         -- Do a forward pass and calculate loss)
-        local output = model:forward(input) --size of output is 16
-		local out = {}
-		local out_o = {}
-		for i=1,16 do
-			if i % 2 == 1 then
-				table.insert(out,output[i])
-			else
-				table.insert(out_o,output[i])
-			end
-		end
-		local err = criterion:forward(out, label)
-		local tmpErr = {}
-		local err2 = 0.0
-		--print(nn.LogSoftMax():cuda():forward(out_o[1],occ[1]))
-		--print(nn.LogSoftMax():cuda():forward(out_o[2],occ[2]))
-		--for i=1,8 do
-		--	tmpErr = tmpErr + nn.LogSoftMax():cuda():forward(out_o[i],occ[i])
-		--end
-		tmpErr = nn.LogSoftMax():cuda():forward(out_o[1],occ[1]) -- !!!!! JAVI! PRIMER ELTO COMO EJEMPLO. PUEDE ESTAR MAL
-		--print(tmpErr)
-		for i=1,20 do
-			err2 = tmpErr[1][i] + err2
-		end
-		err2 = err2 / 20
-		error_oclussion:add_scalar_value("occError", err2)
-		
-		totalLoss=totalLoss+err
-		avgLoss=totalLoss/nIters
-        --avgLoss = avgLoss + err / nIters
+        local output = model:forward(input)
+        local err = criterion:forward(output, label)
+        avgLoss = avgLoss + err / nIters
         if tag == 'train' then
             -- Training: Do backpropagation and optimization
-			model:zeroGradParameters()
-			tmpGT = {}
-			for i=1,8 do
-		       table.insert(tmpGT,label[i])
-			   table.insert(tmpGT,occ[i])
-			end
-			local tmpCriterion = criterion:backward(output, tmpGT)
-			model:backward(input,tmpCriterion)
-				--model:backward(input, criterion:backward(out, label))--output,label
-	--	    model:backward(input, nn.LogSoftMax():cuda():backward(out_o[1],occ[1]))
-           optfn(evalFn, param, optimState)
+            model:zeroGradParameters()
+            model:backward(input, criterion:backward(output, label))
+            optfn(evalFn, param, optimState)
 		else
             -- Validation: Get flipped output
             output = applyFn(function (x) return x:clone() end, output)
@@ -123,29 +78,10 @@ function step(tag)
             if opt.saveHeatmaps then saved.heatmaps:sub(tmpIdx, tmpIdx+bs-1):copy(tmpOut) end
             saved.idxs:sub(tmpIdx, tmpIdx+bs-1):copy(indices)
             saved.preds:sub(tmpIdx, tmpIdx+bs-1):copy(postprocess(set,indices,output))
-
-			--print(postprocess(set,indices,output))
         end
 
         -- Calculate accuracy
-		avgAcc = avgAcc + accuracy(output, tmpGT) / nIters
-        --avgAcc = avgAcc + accuracy(output, label) / nIters
-
-		-- Send to tensorBoard
-		if set == 'train' then
-			avgLoss1:add_scalar_value("avgLoss", avgLoss)
-			error_keypoint2:add_scalar_value("mean_error_keypoint_train", sum_per_image/(i+1))
-		else 
-			error_keypoint3:add_scalar_value("mean_error_keypoint_valid", sum_per_image/(i+1))
-			if set == 'predict' or set == 'test' then
-				avgLoss2:add_scalar_value("avgLoss2", avgLoss)
-			else
-				avgLoss3:add_scalar_value("avgLoss3", avgLoss)
-			end
-		end
-		
-	
-			
+        avgAcc = avgAcc + accuracy(output, label) / nIters
     end
 
 

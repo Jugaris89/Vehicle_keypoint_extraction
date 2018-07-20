@@ -31,7 +31,7 @@ local function parse(arg)
     cmd:text()
     cmd:text(' ---------- Snapshot options -----------------------------------')
     cmd:text()
-    cmd:option('-snapshot',            5, 'How often to take a snapshot of the model (0 = never)')
+    cmd:option('-snapshot',            1, 'How often to take a snapshot of the model (0 = never)')--5
     cmd:option('-saveInput',       true, 'Save input to the network (useful for debugging)')
     cmd:option('-saveHeatmaps',    true, 'Save output heatmaps')
     cmd:text()
@@ -50,7 +50,7 @@ local function parse(arg)
     cmd:text(' ---------- Training options -----------------------------------')
     cmd:text()
     cmd:option('-nEpochs',           100, 'Total number of epochs to run')--100
-    cmd:option('-trainIters',        1000, 'Number of train iterations per epoch')--8000
+    cmd:option('-trainIters',        8000, 'Number of train iterations per epoch')--8000
     cmd:option('-trainBatch',          6, 'Mini-batch size')
     cmd:option('-trainBatch',          2, 'Mini-batch size')
     cmd:option('-validIters',       500, 'Number of validation iterations per epoch') --1000
